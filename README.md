@@ -39,16 +39,15 @@ assert(udpated->version == 2);
 assert(udpated->value == "updated");
 ```
 
+Assuming no one is publishing new values concurrently, the above assertions holds.
+
 In addition to `update()`, `mvcc` class template has failable update functions, `try_update()`, `try_update_until()` and `try_update_for()`. When they fail, they return a null `shared_ptr`.
 
 ```C++
 mvcc11::mvcc<string> x{"initial value"};
 
-auto updated = x.try_update(
+auto updated /* <- may be null, if the update failed */ = x.try_update(
   [](size_t version, string const &value) {
     return value + " updated";
   });
-
-assert(updated.get() ? udpated == x.current() : udpated != x.current());
-assert(updated.get() ? updated->version == 1 : x.current()->version == 0);
 ```
