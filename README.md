@@ -14,8 +14,7 @@ Quote from [1024cores] (http://www.1024cores.net/home/lock-free-algorithms/reade
 Synopsis
 ========
 ```C++
-
-mvcc<string> x{"initial value"};
+mvcc11::mvcc<string> x{"initial value"};
 
 // inital_snapshot is a shared_ptr<snapshot<string> const>
 auto inital_snapshot = x.current();
@@ -33,6 +32,6 @@ auto updated = x.update(
     return "updated";
   });
 
-assert(udpated->version == 1);
-assert(udpated->value == "overwritten");
+assert(udpated->version == 2);
+assert(udpated->value == "updated");
 ```
