@@ -19,7 +19,7 @@ mvcc11::mvcc<string> x{"initial value"};
 // inital_snapshot is a shared_ptr<snapshot<string> const>
 auto inital_snapshot = x.current();
 assert(inital_snapshot->version == 0);
-cout << inital_snapshot->value << endl; // prints "initial value"
+assert(inital_snapshot->value == "initial value");
 
 auto overwritten = x.overwrite("overwritten");
 assert(overwritten->version == 1);
