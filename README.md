@@ -19,26 +19,27 @@ Note: The following assertions holds, assuming no new value was published concur
 ```C++
 mvcc11::mvcc<string> x{"initial value"};
 
-// inital_snapshot is a shared_ptr<snapshot<string> const>
+// snapshots are instances of std::shared_ptr<mvcc11::snapshot<string> const>
 auto inital_snapshot = x.current();
 assert(inital_snapshot->version == 0);
 assert(inital_snapshot->value == "initial value");
 
-auto overwritten = x.overwrite("overwritten");
-assert(overwritten == x.current());
-assert(overwritten->version == 1);
-assert(overwritten->value == "overwritten");
+auto snapshot1 = x.overwrite("overwritten");
+assert(snapshot1 != inital_snapshot);
+assert(snapshot1 == x.current());
+assert(snapshot1->version == 1);
+assert(snapshot1->value == "overwritten");
 
-auto updated = x.update(
+auto snapshot2 = x.update(
   [](size_t version, string const &value) {
     assert(version == 1);
     assert(value == "overwritten");
     return "updated";
   });
-
-assert(udpated == x.current());
-assert(udpated->version == 2);
-assert(udpated->value == "updated");
+assert(snapshot2 != snapshot1);
+assert(snapshot2 == x.current());
+assert(snapshot2->version == 2);
+assert(snapshot2->value == "updated");
 ```
 
 In addition to `update()`, `mvcc` class template has failable update functions, `try_update()`, `try_update_until()` and `try_update_for()`. When they fail, they return a null `shared_ptr`.
@@ -52,9 +53,9 @@ auto not_used = std::async(
     x.overwrite(1);
   });
 
-auto updated = x.try_update(
+auto snapshot = x.try_update(
   [](size_t version, int value) { // updater
     return value + 1;
   });
 ```
-The `udpated` snapshot above may be null, if the async task and updater happened to run concurrently.
+The snapshot above may be null, if the async task and updater happened to run concurrently.
