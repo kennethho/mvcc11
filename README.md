@@ -14,6 +14,8 @@ Quote from [1024cores] (http://www.1024cores.net/home/lock-free-algorithms/reade
 Synopsis
 ========
 
+Note: The following assertions holds, assuming no new value was published concurrently (i.e. in another thread).
+
 ```C++
 mvcc11::mvcc<string> x{"initial value"};
 
@@ -39,15 +41,20 @@ assert(udpated->version == 2);
 assert(udpated->value == "updated");
 ```
 
-Assuming no one is publishing new values concurrently, the above assertions holds.
-
 In addition to `update()`, `mvcc` class template has failable update functions, `try_update()`, `try_update_until()` and `try_update_for()`. When they fail, they return a null `shared_ptr`.
 
 ```C++
-mvcc11::mvcc<string> x{"initial value"};
+mvcc11::mvcc<int> x{0};
 
-auto updated /* <- may be null, if the update failed */ = x.try_update(
-  [](size_t version, string const &value) {
-    return value + " updated";
+auto not_used = std::async(
+  std::launch::async,
+  [&x] { // async task
+    x.overwrite(1);
+  });
+
+auto updated = x.try_update(
+  [](size_t version, int value) { // updater
+    return value + 1;
   });
 ```
+The `udpated` snapshot above may be null, if the async task and updater happened to run concurrently.
