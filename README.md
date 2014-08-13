@@ -49,6 +49,6 @@ auto updated = x.try_update(
     return value + " updated";
   });
 
-assert(updated.get() ? udpated != x.current() : udpated == x.current());
+assert(updated.get() ? udpated == x.current() : udpated != x.current());
 assert(updated.get() ? updated->version == 1 : x.current()->version == 0);
 ```
