@@ -20,6 +20,7 @@
 
 #include <utility>
 #include <chrono>
+#include <thread>
 
 #ifdef MVCC11_DISABLE_NOEXCEPT
 #define MVCC11_NOEXCEPT(COND)
@@ -34,16 +35,11 @@ struct snapshot
 {
   using value_type = ValueType;
 
-  snapshot(size_t ver)
-  : version{ver}
-  , value{}
-  {}
+  snapshot(size_t ver) MVCC11_NOEXCEPT(true);
 
   template <class U>
   snapshot(size_t ver, U&& arg)
-  : version{ver}
-  , value{std::forward<U>(arg)}
-  {}
+    MVCC11_NOEXCEPT( MVCC11_NOEXCEPT(value_type{std::forward<U>(arg)}) );
 
   size_t version;
   value_type value;
@@ -58,133 +54,226 @@ public:
   using mutable_snapshot_ptr = smart_ptr::shared_ptr<snapshot_type>;
   using const_snapshot_ptr = smart_ptr::shared_ptr<snapshot_type const>;
 
-  mvcc() MVCC11_NOEXCEPT(true)
-  : mutable_current_{smart_ptr::make_shared<snapshot_type>(0)}
-  {
-  }
-  template <class U>
-  explicit mvcc(U &&value)
-  : mutable_current_{smart_ptr::make_shared<snapshot_type>(0, std::forward<U>(value))}
-  {
-  }
+  mvcc() MVCC11_NOEXCEPT(true);
+
+  mvcc(value_type const &value);
+  mvcc(value_type &&value);
 
   mvcc(mvcc const &other) MVCC11_NOEXCEPT(true) = default;
+  mvcc(mvcc &&other) MVCC11_NOEXCEPT(true) = default;
 
   ~mvcc() = default;
 
   mvcc& operator=(mvcc const &other) MVCC11_NOEXCEPT(true) = default;
+  mvcc& operator=(mvcc &&other) MVCC11_NOEXCEPT(true) = default;
 
-  const_snapshot_ptr current() MVCC11_NOEXCEPT(true)
-  {
-    return smart_ptr::atomic_load(&mutable_current_);
-  }
+  const_snapshot_ptr current() MVCC11_NOEXCEPT(true);
+  const_snapshot_ptr operator*() MVCC11_NOEXCEPT(true);
+  const_snapshot_ptr operator->() MVCC11_NOEXCEPT(true);
 
-  const_snapshot_ptr operator*() MVCC11_NOEXCEPT(true)
-  {
-    return this->current();
-  }
-  const_snapshot_ptr operator->() MVCC11_NOEXCEPT(true)
-  {
-    return this->current();
-  }
-
-  template <class U>
-  const_snapshot_ptr overwrite(U &&value) //__attribute__((no_sanitize_thread))
-  {
-    auto desired = smart_ptr::make_shared<snapshot_type>(
-      0,
-      std::forward<U>(value));
-
-    while(true)
-    {
-      auto expected = smart_ptr::atomic_load(&mutable_current_);
-      desired->version = expected->version + 1;
-
-      if(smart_ptr::atomic_compare_exchange_strong(
-        &mutable_current_,
-        &expected,
-        desired))
-      {
-        return this->current();
-      }
-    }
-  }
+  const_snapshot_ptr overwrite(value_type const &value);
+  const_snapshot_ptr overwrite(value_type &&value);
 
   template <class Updater>
-  const_snapshot_ptr update(Updater updater)
-  {
-    while(true)
-    {
-      auto updated = this->try_update_impl(updater);
-      if(updated != nullptr)
-        return updated;
-    }
-  }
+  const_snapshot_ptr update(Updater updater);
 
   template <class Updater>
-  const_snapshot_ptr try_update(Updater updater)
-  {
-    return this->try_update_impl(updater);
-  }
+  const_snapshot_ptr try_update(Updater updater);
 
   template <class Updater, class Clock, class Duration>
   const_snapshot_ptr try_update_until(
     Updater updater,
-    std::chrono::time_point<Clock, Duration> const &timeout_time)
-  {
-    return this->try_update_until_impl(updater, timeout_time);
-  }
+    std::chrono::time_point<Clock, Duration> const &timeout_time);
 
   template <class Updater, class Rep, class Period>
   const_snapshot_ptr try_update_for(
     Updater updater,
-    std::chrono::duration<Rep, Period> const &timeout_duration)
-  {
-    auto timeout_time = std::chrono::high_resolution_clock::now() + timeout_duration;
-    return this->try_update_until_impl(updater, timeout_time);
-  }
+    std::chrono::duration<Rep, Period> const &timeout_duration);
 
 private:
+  template <class U>
+  const_snapshot_ptr overwrite_impl(U &&value);
+
   template <class Updater>
-  const_snapshot_ptr try_update_impl(Updater &updater) //__attribute__((no_sanitize_thread))
-  {
-    auto expected = smart_ptr::atomic_load(&mutable_current_);
-    auto const const_expected_version = expected->version;
-    auto const &const_expected_value = expected->value;
+  const_snapshot_ptr try_update_impl(Updater &updater);
 
-    auto desired = smart_ptr::make_shared<snapshot_type>(
-      const_expected_version + 1,
-      updater(const_expected_version, const_expected_value));
-
-    if(smart_ptr::atomic_compare_exchange_strong(
-      &mutable_current_,
-      &expected,
-      desired))
-    {
-      return this->current();
-    }
-
-    return nullptr;
-  }
   template <class Updater, class Clock, class Duration>
   const_snapshot_ptr try_update_until_impl(
     Updater &updater,
-    std::chrono::time_point<Clock, Duration> const &timeout_time)
-  {
-    while(true)
-    {
-      auto updated = this->try_update_impl(updater);
-
-      if(updated != nullptr)
-        return updated;
-
-      if(std::chrono::high_resolution_clock::now() > timeout_time)
-	return nullptr;
-    }
-  }
+    std::chrono::time_point<Clock, Duration> const &timeout_time);
 
   mutable_snapshot_ptr mutable_current_;
 };
+
+template <class ValueType>
+snapshot<ValueType>::snapshot(size_t ver) MVCC11_NOEXCEPT(true)
+: version{ver}
+, value{}
+{}
+
+template <class ValueType>
+template <class U>
+snapshot<ValueType>::snapshot(size_t ver, U&& arg)
+  MVCC11_NOEXCEPT( MVCC11_NOEXCEPT(value_type{std::forward<U>(arg)}) )
+: version{ver}
+, value{std::forward<U>(arg)}
+{}
+
+
+template <class ValueType>
+mvcc<ValueType>::mvcc() MVCC11_NOEXCEPT(true)
+: mutable_current_{smart_ptr::make_shared<snapshot_type>(0)}
+{}
+template <class ValueType>
+mvcc<ValueType>::mvcc(value_type const &value)
+: mutable_current_{smart_ptr::make_shared<snapshot_type>(0, value)}
+{
+}
+template <class ValueType>
+mvcc<ValueType>::mvcc(value_type &&value)
+: mutable_current_{smart_ptr::make_shared<snapshot_type>(0, std::move(value))}
+{
+}
+
+template <class ValueType>
+auto mvcc<ValueType>::current() MVCC11_NOEXCEPT(true) -> const_snapshot_ptr
+{
+  return smart_ptr::atomic_load(&mutable_current_);
+}
+template <class ValueType>
+auto mvcc<ValueType>::operator*() MVCC11_NOEXCEPT(true) -> const_snapshot_ptr
+{
+  return this->current();
+}
+template <class ValueType>
+auto mvcc<ValueType>::operator->() MVCC11_NOEXCEPT(true) -> const_snapshot_ptr
+{
+  return this->current();
+}
+
+template <class ValueType>
+auto mvcc<ValueType>::overwrite(value_type const &value) -> const_snapshot_ptr
+{
+  return this->overwrite_impl(value);
+}
+template <class ValueType>
+auto mvcc<ValueType>::overwrite(value_type &&value) -> const_snapshot_ptr
+{
+  return this->overwrite_impl(std::move(value));
+}
+
+template <class ValueType>
+template <class U>
+auto mvcc<ValueType>::overwrite_impl(U &&value) -> const_snapshot_ptr
+{
+  auto desired =
+    smart_ptr::make_shared<snapshot_type>(
+      0,
+      std::forward<U>(value));
+
+  while(true)
+  {
+    auto expected = smart_ptr::atomic_load(&mutable_current_);
+    desired->version = expected->version + 1;
+
+    auto const overwritten =
+      smart_ptr::atomic_compare_exchange_strong(
+        &mutable_current_,
+        &expected,
+        desired);
+
+    if(overwritten)
+      return this->current();
+  }
+}
+
+template <class ValueType>
+template <class Updater>
+auto mvcc<ValueType>::update(Updater updater) -> const_snapshot_ptr
+{
+  while(true)
+  {
+    auto updated = this->try_update_impl(updater);
+    if(updated != nullptr)
+      return updated;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+}
+
+template <class ValueType>
+template <class Updater>
+auto mvcc<ValueType>::try_update(Updater updater) -> const_snapshot_ptr
+{
+  return this->try_update_impl(updater);
+}
+
+template <class ValueType>
+template <class Updater, class Clock, class Duration>
+auto mvcc<ValueType>::try_update_until(
+  Updater updater,
+  std::chrono::time_point<Clock, Duration> const &timeout_time)
+  -> const_snapshot_ptr
+{
+  return this->try_update_until_impl(updater, timeout_time);
+}
+
+template <class ValueType>
+template <class Updater, class Rep, class Period>
+auto mvcc<ValueType>::try_update_for(
+  Updater updater,
+  std::chrono::duration<Rep, Period> const &timeout_duration)
+  -> const_snapshot_ptr
+{
+  auto timeout_time = std::chrono::high_resolution_clock::now() + timeout_duration;
+  return this->try_update_until_impl(updater, timeout_time);
+}
+
+
+template <class ValueType>
+template <class Updater>
+auto mvcc<ValueType>::try_update_impl(Updater &updater) -> const_snapshot_ptr
+{
+  auto expected = smart_ptr::atomic_load(&mutable_current_);
+  auto const const_expected_version = expected->version;
+  auto const &const_expected_value = expected->value;
+
+  auto desired =
+    smart_ptr::make_shared<snapshot_type>(
+      const_expected_version + 1,
+      updater(const_expected_version, const_expected_value));
+
+  auto const updated =
+    smart_ptr::atomic_compare_exchange_strong(
+      &mutable_current_,
+      &expected,
+      desired);
+
+  if(updated)
+    return this->current();
+
+  return nullptr;
+}
+template <class ValueType>
+template <class Updater, class Clock, class Duration>
+auto mvcc<ValueType>::try_update_until_impl(
+  Updater &updater,
+  std::chrono::time_point<Clock, Duration> const &timeout_time)
+  -> const_snapshot_ptr
+{
+  while(true)
+  {
+    auto updated = this->try_update_impl(updater);
+
+    if(updated != nullptr)
+      return updated;
+
+    if(std::chrono::high_resolution_clock::now() > timeout_time)
+      return nullptr;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+}
 
 } // namespace mvcc11
 
