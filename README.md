@@ -36,7 +36,6 @@ class mvcc
 public:
   using value_type = ValueType;
   using snapshot_type = snapshot<value_type>;
-  using mutable_snapshot_ptr = shared_ptr<snapshot_type>;
   using const_snapshot_ptr = shared_ptr<snapshot_type const>;
 
   mvcc() noexcept;
