@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(test_try_update_for_fails_with_disturber)
                   }
                 }
 
-                this_thread::sleep_for(milliseconds(100));
+                this_thread::sleep_for(milliseconds(200));
                 this_thread::yield();
                 return UPDATED;
               },
@@ -408,7 +408,6 @@ BOOST_AUTO_TEST_CASE(test_try_update_for_fails_with_disturber)
   do
   {
     x.overwrite(DISTURBED);
-    this_thread::yield();
   } while(start + seconds(1) > hr_now());
 
   size_t const MINIMUM_NUMBER_OF_OVERWRITES = 100;
