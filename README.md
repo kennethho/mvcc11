@@ -178,7 +178,7 @@ else
 // Pseudo code
 const_snapshot_ptr mvcc::try_update(Updater updater)
 {
-  auto expected = current_snapshot_;  // 1
+  auto expected = current_snapshot_;                // 1
   
   auto new_value = updater(expected->version, expected->value);
 
