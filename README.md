@@ -13,8 +13,6 @@ Synopsis
 ========
 
 ```C++
-#define MVCC11_NOEXCEPT(expr) noexcept(expr)
-
 namespace mvcc11 {
 
 template <class ValueType>
@@ -22,11 +20,11 @@ struct snapshot
 {
   using value_type = ValueType;
 
-  snapshot(size_t ver) MVCC11_NOEXCEPT(true);
+  snapshot(size_t ver) noexcept;
 
   template <class U>
   snapshot(size_t ver, U&& arg)
-    MVCC11_NOEXCEPT( MVCC11_NOEXCEPT(value_type{std::forward<U>(arg)}) );
+    noexcept( noexcept(value_type{std::forward<U>(arg)}) );
 
   size_t version;
   value_type value;
@@ -41,22 +39,22 @@ public:
   using mutable_snapshot_ptr = shared_ptr<snapshot_type>;
   using const_snapshot_ptr = shared_ptr<snapshot_type const>;
 
-  mvcc() MVCC11_NOEXCEPT(true);
+  mvcc() noexcept;
 
   mvcc(value_type const &value);
   mvcc(value_type &&value);
 
-  mvcc(mvcc const &other) MVCC11_NOEXCEPT(true);
-  mvcc(mvcc &&other) MVCC11_NOEXCEPT(true);
+  mvcc(mvcc const &other) noexcept;
+  mvcc(mvcc &&other) noexcept;
 
   ~mvcc();
 
-  mvcc& operator=(mvcc const &other) MVCC11_NOEXCEPT(true) = default;
-  mvcc& operator=(mvcc &&other) MVCC11_NOEXCEPT(true) = default;
+  mvcc& operator=(mvcc const &other) noexcept = default;
+  mvcc& operator=(mvcc &&other) noexcept = default;
 
-  const_snapshot_ptr current() MVCC11_NOEXCEPT(true);
-  const_snapshot_ptr operator*() MVCC11_NOEXCEPT(true);
-  const_snapshot_ptr operator->() MVCC11_NOEXCEPT(true);
+  const_snapshot_ptr current() noexcept;
+  const_snapshot_ptr operator*() noexcept;
+  const_snapshot_ptr operator->() noexcept;
 
   const_snapshot_ptr overwrite(value_type const &value);
   const_snapshot_ptr overwrite(value_type &&value);
