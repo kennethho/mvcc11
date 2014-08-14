@@ -19,6 +19,11 @@
 // Optionally uses std::shared_ptr instead of boost::shared_ptr
 #ifdef MVCC11_USES_STD_SHARED_PTR
 
+// Optionally overwrites
+#ifndef MVCC11_CONTENSION_SLEEP_MS
+#define MVCC11_CONTENSION_SLEEP_MS 50
+#endif // MVCC11_CONTENSION_SLEEP_MS
+
 #include <memory>
 
 namespace mvcc11 {
@@ -234,7 +239,7 @@ auto mvcc<ValueType>::update(Updater updater) -> const_snapshot_ptr
     if(updated != nullptr)
       return updated;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_SLEEP_MS));
   }
 }
 
@@ -308,7 +313,7 @@ auto mvcc<ValueType>::try_update_until_impl(
     if(std::chrono::high_resolution_clock::now() > timeout_time)
       return nullptr;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_SLEEP_MS));
   }
 }
 
