@@ -225,3 +225,8 @@ const_snapshot_ptr mvcc::update(Updater updater)
 1. Calls `try_update()`
 2. Returns `updated` snapshot if the publication succeeded
 3. Sleep a bit to avoid spining, go back to step 1
+
+# Installing and using mvcc11
+
+Though you do need a C++11 conforming compiler, *mvcc11* is header only, just drop it in your include path.
+
