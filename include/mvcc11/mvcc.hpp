@@ -225,7 +225,7 @@ auto mvcc<ValueType>::overwrite_impl(U &&value) -> const_snapshot_ptr
         desired);
 
     if(overwritten)
-      return this->current();
+      return desired;
   }
 }
 
