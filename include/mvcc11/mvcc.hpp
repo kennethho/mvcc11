@@ -16,13 +16,13 @@
 #ifndef MVCC11_MVCC_HPP
 #define MVCC11_MVCC_HPP
 
-// Optionally uses std::shared_ptr instead of boost::shared_ptr
-#ifdef MVCC11_USES_STD_SHARED_PTR
-
 // Optionally overwrites
-#ifndef MVCC11_CONTENSION_SLEEP_MS
+#ifndef MVCC11_CONTESION_SLEEP_MS
 #define MVCC11_CONTENSION_SLEEP_MS 50
 #endif // MVCC11_CONTENSION_SLEEP_MS
+
+// Optionally uses std::shared_ptr instead of boost::shared_ptr
+#ifdef MVCC11_USES_STD_SHARED_PTR
 
 #include <memory>
 
