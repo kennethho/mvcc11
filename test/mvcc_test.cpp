@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(test_try_update_for_fails_with_disturber)
                   }
                 }
 
-                this_thread::sleep_for(milliseconds(500));
+                this_thread::sleep_for(milliseconds(100));
                 return UPDATED;
               },
               seconds(1));

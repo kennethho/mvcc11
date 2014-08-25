@@ -16,10 +16,9 @@
 #ifndef MVCC11_MVCC_HPP
 #define MVCC11_MVCC_HPP
 
-// Optionally overwrites
-#ifndef MVCC11_CONTESION_SLEEP_MS
-#define MVCC11_CONTENSION_SLEEP_MS 50
-#endif // MVCC11_CONTENSION_SLEEP_MS
+#ifndef MVCC11_CONTENSION_BACKOFF_SLEEP_MS
+#define MVCC11_CONTENSION_BACKOFF_SLEEP_MS 50
+#endif // MVCC11_CONTENSION_BACKOFF_SLEEP_MS
 
 // Optionally uses std::shared_ptr instead of boost::shared_ptr
 #ifdef MVCC11_USES_STD_SHARED_PTR
@@ -239,7 +238,7 @@ auto mvcc<ValueType>::update(Updater updater) -> const_snapshot_ptr
     if(updated != nullptr)
       return updated;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_SLEEP_MS));
+    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_BACKOFF_SLEEP_MS));
   }
 }
 
@@ -292,7 +291,7 @@ auto mvcc<ValueType>::try_update_impl(Updater &updater) -> const_snapshot_ptr
       desired);
 
   if(updated)
-    return this->current();
+    return desired;
 
   return nullptr;
 }
@@ -313,7 +312,7 @@ auto mvcc<ValueType>::try_update_until_impl(
     if(std::chrono::high_resolution_clock::now() > timeout_time)
       return nullptr;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_SLEEP_MS));
+    std::this_thread::sleep_for(std::chrono::milliseconds(MVCC11_CONTENSION_BACKOFF_SLEEP_MS));
   }
 }
 
