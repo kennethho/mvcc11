@@ -14,7 +14,7 @@ IF(BUILD_MVCC11_TEST_WITH_STDLIB_LIBCPP)
   MESSAGE(SEND_ERROR "Unless your Boost is built with ${CMAKE_CXX_COMPILER_ID} and -std=c++11, using libc++ may not work probably.")
 ENDIF()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Weffc++")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 
 IF(MVCC11_USES_STD_SHARED_PTR)
   ADD_DEFINITIONS(-DMVCC11_USES_STD_SHARED_PTR=1)
