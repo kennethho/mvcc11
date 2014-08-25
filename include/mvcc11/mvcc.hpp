@@ -100,8 +100,8 @@ public:
   mvcc(value_type const &value);
   mvcc(value_type &&value);
 
-  mvcc(mvcc const &other) MVCC11_NOEXCEPT(true) = default;
-  mvcc(mvcc &&other) MVCC11_NOEXCEPT(true) = default;
+  mvcc(mvcc const &other) MVCC11_NOEXCEPT(true);
+  mvcc(mvcc &&other) MVCC11_NOEXCEPT(true);
 
   ~mvcc() = default;
 
@@ -173,6 +173,16 @@ mvcc<ValueType>::mvcc(value_type const &value)
 template <class ValueType>
 mvcc<ValueType>::mvcc(value_type &&value)
 : mutable_current_{smart_ptr::make_shared<snapshot_type>(0, std::move(value))}
+{
+}
+template <class ValueType>
+mvcc<ValueType>::mvcc(mvcc const &other) MVCC11_NOEXCEPT(true)
+: mutable_current_{smart_ptr::atomic_load(other)}
+{
+}
+template <class ValueType>
+mvcc<ValueType>::mvcc(mvcc &&other) MVCC11_NOEXCEPT(true)
+: mutable_current_{smart_ptr::atomic_load(other)}
 {
 }
 
