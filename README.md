@@ -48,8 +48,8 @@ public:
 
   ~mvcc();
 
-  mvcc& operator=(mvcc const &other) noexcept = default;
-  mvcc& operator=(mvcc &&other) noexcept = default;
+  mvcc& operator=(mvcc const &other) noexcept;
+  mvcc& operator=(mvcc &&other) noexcept;
 
   const_snapshot_ptr current() noexcept;
   const_snapshot_ptr operator*() noexcept;
