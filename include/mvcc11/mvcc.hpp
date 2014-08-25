@@ -31,6 +31,7 @@ namespace smart_ptr {
 using std::shared_ptr;
 using std::make_shared;
 using std::atomic_load;
+using std::atomic_store;
 using std::atomic_compare_exchange_strong
 
 } // namespace smart_ptr
@@ -47,6 +48,7 @@ namespace smart_ptr {
 using boost::shared_ptr;
 using boost::make_shared;
 using boost::atomic_load;
+using boost::atomic_store;
 
 template <class T>
 bool atomic_compare_exchange_strong(shared_ptr<T> * p, shared_ptr<T> * v, shared_ptr<T> w)
@@ -105,8 +107,8 @@ public:
 
   ~mvcc() = default;
 
-  mvcc& operator=(mvcc const &other) MVCC11_NOEXCEPT(true) = default;
-  mvcc& operator=(mvcc &&other) MVCC11_NOEXCEPT(true) = default;
+  mvcc& operator=(mvcc const &other) MVCC11_NOEXCEPT(true);
+  mvcc& operator=(mvcc &&other) MVCC11_NOEXCEPT(true);
 
   const_snapshot_ptr current() MVCC11_NOEXCEPT(true);
   const_snapshot_ptr operator*() MVCC11_NOEXCEPT(true);
@@ -184,6 +186,23 @@ template <class ValueType>
 mvcc<ValueType>::mvcc(mvcc &&other) MVCC11_NOEXCEPT(true)
 : mutable_current_{smart_ptr::atomic_load(other)}
 {
+}
+
+template <class ValueType>
+auto mvcc<ValueType>::operator=(mvcc const &other) MVCC11_NOEXCEPT(true) -> mvcc &
+{
+  smart_ptr::atomic_store(&this->mutable_current_,
+                          smart_ptr::atomic_load(&other.mutable_current_));
+
+  return *this;
+}
+template <class ValueType>
+auto mvcc<ValueType>::operator=(mvcc &&other) MVCC11_NOEXCEPT(true) -> mvcc &
+{
+  smart_ptr::atomic_store(&this->mutable_current_,
+                          smart_ptr::atomic_load(&other.mutable_current_));
+
+  return *this;
 }
 
 template <class ValueType>
