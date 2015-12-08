@@ -89,7 +89,7 @@ An `mvcc` object could be intialized with a user-specified initial value.
 mvcc11::mvcc<ValueType> x{initial_value};
 ```
 
-If `ValueType` is DefaultConstructible, `mvcc<ValueType` is also DefaultConstructible.
+If `ValueType` is DefaultConstructible, `mvcc<ValueType>` is also DefaultConstructible.
 
 ```C++
 mvcc11::mvcc<ValueType> y;
